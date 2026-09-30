@@ -87,8 +87,6 @@ public class ToolsActivity extends Activity implements FakeGpsEngine.Listener {
     private final Button[] moveModeButtons = new Button[3];
     private final List<double[]> plannedPath = new ArrayList<>();   // đường tìm được (OSRM) để vẽ + đi theo
     private boolean routeFetching = false;
-    private boolean autoMoveOnTap = true;
-    private CheckBox autoMoveCheck;
     private LocationManager locationManager;
     private double realLat, realLng;
     private boolean hasReal, realApplied;
@@ -536,8 +534,7 @@ public class ToolsActivity extends Activity implements FakeGpsEngine.Listener {
             @Override public void onMapTap(double lat, double lng) {
                 selectedLat = lat; selectedLng = lng; hasSelection = true;
                 refreshMapMarkers();
-                mapInfo.setText("Đã chọn: " + fmt(lat) + ", " + fmt(lng));
-                fetchRouteTo(lat, lng, autoMoveOnTap);
+                mapInfo.setText("Đã chọn: " + fmt(lat) + ", " + fmt(lng) + " — bấm ĐI TỚI hoặc TELEPORT");
             }
             @Override public void onCurrentChanged(double lat, double lng) { }
         });
@@ -560,7 +557,7 @@ public class ToolsActivity extends Activity implements FakeGpsEngine.Listener {
         panel.addView(modes, wrap());
 
         LinearLayout tools = row();
-        Button here = button("🎯 VỊ TRÍ THẬT", Color.rgb(38, 100, 160), Color.WHITE);
+        Button here = button("🎯 VỊ TRÍ", Color.rgb(38, 100, 160), Color.WHITE);
         here.setOnClickListener(v -> goToRealLocation());
         Button tele = button("➤ ĐI TỚI", Color.rgb(32, 150, 92), Color.WHITE);
         tele.setOnClickListener(v -> moveToSelected());
@@ -577,7 +574,7 @@ public class ToolsActivity extends Activity implements FakeGpsEngine.Listener {
         LinearLayout tools2 = row();
         Button save = button("📌 LƯU ĐIỂM", Color.rgb(126, 82, 190), Color.WHITE);
         save.setOnClickListener(v -> askSavePlace());
-        Button addRoute = button("➕  VÀO ROUTE", Color.rgb(150, 92, 42), Color.WHITE);
+        Button addRoute = button("➕ ROUTE", Color.rgb(150, 92, 42), Color.WHITE);
         addRoute.setOnClickListener(v -> {
             if (!hasSelection) { toast("Chạm bản đồ để chọn điểm"); return; }
             engine.addRoutePoint(selectedLat, selectedLng);
@@ -586,28 +583,13 @@ public class ToolsActivity extends Activity implements FakeGpsEngine.Listener {
             refreshMapMarkers();
             toast("Đã thêm vào route");
         });
-        Button listToggle = button("📋  DANH SÁCH", Color.rgb(52, 60, 76), Color.WHITE);
-        Button clearTrail = button("🧹  XÓA VẾT", Color.rgb(90, 60, 66), Color.WHITE);
-        clearTrail.setOnClickListener(v -> {
-            engine.clearTrail();
-            mapView.setTrail(engine.trail());
-            refreshMapMarkers();
-            toast("Đã xóa vệt đường đi");
-        });
+        Button listToggle = button("📋 DANH SÁCH", Color.rgb(52, 60, 76), Color.WHITE);
         tools2.addView(save, weight());
         tools2.addView(addRoute, weight());
         tools2.addView(listToggle, weight());
-        tools2.addView(clearTrail, weight());
         panel.addView(tools2, wrap());
 
-        autoMoveCheck = new CheckBox(this);
-        autoMoveCheck.setText("🚶  Tự tìm đường & đi khi chạm bản đồ");
-        autoMoveCheck.setTextColor(Color.WHITE);
-        autoMoveCheck.setChecked(true);
-        autoMoveCheck.setOnCheckedChangeListener((v, checked) -> autoMoveOnTap = checked);
-        panel.addView(autoMoveCheck, wrap());
-
-        mapInfo = info("Chạm bản đồ: tìm đường tới điểm đó (đường cam) rồi đi theo đường. Đỏ = vị trí đã lưu, xanh lá = GPS thật, cyan = vệt đã đi.");
+        mapInfo = info("Chạm bản đồ để CHỌN điểm. Bấm ➤ ĐI TỚI để tìm đường theo phố rồi đi theo, hoặc ⚡ TELEPORT để nhảy tức thời.");
         panel.addView(mapInfo, wrap());
 
         placeList = column();
@@ -691,7 +673,6 @@ public class ToolsActivity extends Activity implements FakeGpsEngine.Listener {
         }
         mapView.setMarkers(pts, labels);
         mapView.setRoute(engine.route().size() > 1 ? engine.route() : plannedPath);
-        mapView.setTrail(engine.trail());
         if (hasReal) mapView.setRealLocation(realLat, realLng);
         // Chưa bật giả lập GPS thì "vị trí hiện tại" chính là GPS thật của máy.
         if (!engine.isRunning() && hasReal) mapView.setCurrent(realLat, realLng);
@@ -1098,7 +1079,6 @@ public class ToolsActivity extends Activity implements FakeGpsEngine.Listener {
                         + "\nHướng: " + Math.round(bearing) + "°  •  Tốc độ: " + fmt(speed) + " m/s");
             }
             if (mapView != null) mapView.setCurrent(lat, lng);
-            if (mapView != null) mapView.setTrail(engine.trail());
             if (mapInfo != null && currentPage == 1) {
                 mapInfo.setText("Vị trí hiện tại: " + fmt(lat) + ", " + fmt(lng)
                         + "  •  Đã lưu " + places.places().size() + " điểm  •  Route " + engine.route().size() + " điểm");
@@ -1203,10 +1183,19 @@ public class ToolsActivity extends Activity implements FakeGpsEngine.Listener {
     }
     private Button button(String s, int bg, int fg) {
         Button b = new Button(this);
-        b.setText(s); b.setAllCaps(false); b.setTextSize(13); b.setMinHeight(dp(50));
+        b.setText(s);
+        b.setAllCaps(false);
+        b.setTextSize(12);
+        b.setSingleLine(true);
+        b.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        b.setGravity(Gravity.CENTER);
+        b.setIncludeFontPadding(false);
+        b.setPadding(dp(6), 0, dp(6), 0);
+        b.setMinHeight(dp(44));
+        b.setMinimumHeight(dp(44));
         android.graphics.drawable.GradientDrawable shape = new android.graphics.drawable.GradientDrawable();
         shape.setColor(Color.WHITE);
-        shape.setCornerRadius(dp(12));
+        shape.setCornerRadius(dp(10));
         b.setBackground(shape);
         b.setBackgroundTintList(new ColorStateList(
                 new int[][]{new int[]{-android.R.attr.state_enabled}, new int[]{}},

@@ -51,7 +51,6 @@ public class OsmMapView extends View {
     private final List<double[]> markers = new ArrayList<>();     // {lat,lng}
     private final List<String> markerLabels = new ArrayList<>();
     private final List<double[]> route = new ArrayList<>();
-    private final List<double[]> trail = new ArrayList<>();
 
     private Listener listener;
 
@@ -67,7 +66,6 @@ public class OsmMapView extends View {
     private final Paint markerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint trailPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private final TileStore tiles;
     private final ExecutorService loader = Executors.newFixedThreadPool(4);
@@ -82,11 +80,6 @@ public class OsmMapView extends View {
         linePaint.setStrokeWidth(dp(4));
         linePaint.setStrokeCap(Paint.Cap.ROUND);
         linePaint.setColor(Color.rgb(255, 170, 30));
-        trailPaint.setStyle(Paint.Style.STROKE);
-        trailPaint.setStrokeWidth(dp(5));
-        trailPaint.setStrokeCap(Paint.Cap.ROUND);
-        trailPaint.setStrokeJoin(Paint.Join.ROUND);
-        trailPaint.setColor(Color.rgb(0, 220, 255));
         tiles = new TileStore(context);
     }
 
@@ -128,13 +121,6 @@ public class OsmMapView extends View {
     public void setRoute(List<double[]> pts) {
         route.clear();
         if (pts != null) route.addAll(pts);
-        invalidate();
-    }
-
-    /** Vệt đường đã đi (màu xanh cyan). Tự ngắt đoạn khi nhảy xa (teleport). */
-    public void setTrail(List<double[]> pts) {
-        trail.clear();
-        if (pts != null) trail.addAll(pts);
         invalidate();
     }
 
@@ -221,26 +207,6 @@ public class OsmMapView extends View {
                 if (i == 0) path.moveTo(p[0], p[1]); else path.lineTo(p[0], p[1]);
             }
             c.drawPath(path, linePaint);
-        }
-
-        // Vệt đường đã đi (cyan). Nhảy > 500m (teleport) thì ngắt đoạn, không kéo đường thẳng xuyên bản đồ.
-        if (trail.size() > 1) {
-            Path path = new Path();
-            boolean started = false;
-            double prevLat = 0, prevLng = 0;
-            for (int i = 0; i < trail.size(); i++) {
-                double[] q = trail.get(i);
-                float[] p = project(q[0], q[1], tz, scale, cxWorld, cyWorld);
-                if (!started) { path.moveTo(p[0], p[1]); started = true; }
-                else {
-                    double d = Math.hypot((q[0] - prevLat) * 111320.0,
-                            (q[1] - prevLng) * 111320.0 * Math.cos(Math.toRadians(q[0])));
-                    if (d > 500) path.moveTo(p[0], p[1]); else path.lineTo(p[0], p[1]);
-                }
-                prevLat = q[0];
-                prevLng = q[1];
-            }
-            c.drawPath(path, trailPaint);
         }
 
         // Markers

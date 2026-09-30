@@ -27,10 +27,9 @@ APK: `app/build/outputs/apk/debug/app-debug.apk`
    route đi tuần tự nhiều điểm có lặp, và **kết nối MHN custom (AIDL)**.
 2. **🗺 BẢN ĐỒ** — bản đồ OpenStreetMap **full màn hình**, các nút điều khiển **nổi ở đáy** (đè lên bản
    đồ), lấy **vị trí GPS thật của máy** làm mốc ban đầu (chấm xanh lá).
-   **Chạm bản đồ = tìm đường (routing theo phố, OSRM) tới điểm đó → vẽ đường (cam) → đi theo đúng đường**
-   (tick "Tự tìm đường & đi khi chạm bản đồ" để tắt). Có **3 chế độ tốc độ: đi bộ / xe đạp / ô tô**,
-   **⚡ TELEPORT** (nhảy tức thời), **■ DỪNG**, lưu địa điểm (📋 DANH SÁCH), thêm điểm vào route,
-   và vệt đường đã đi (cyan, 🧹 XÓA VẾT).
+   **Chạm bản đồ chỉ để CHỌN điểm**; bấm **➤ ĐI TỚI** mới tìm đường (routing theo phố, OSRM) → vẽ đường
+   (cam) → đi theo đúng đường đó; **⚡ TELEPORT** nhảy tức thời; **■ DỪNG** dừng đi theo đường.
+   Có **3 chế độ tốc độ: đi bộ / xe đạp / ô tô**, lưu địa điểm (📋 DANH SÁCH), thêm điểm vào route.
 3. **🔍 OCR** — chụp màn hình (MediaProjection) + MLKit đọc chữ, tách `CP`/`HP`/mức bụi rồi điền
    sẵn vào máy tính IV.
 4. **🧮 IV** — tra CP/HP/IV theo mức bụi hoặc theo cấp, kèm xếp hạng PVP Little/Great/Ultra/Master.

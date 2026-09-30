@@ -61,11 +61,6 @@ public final class FakeGpsEngine {
     private double targetLat, targetLng;
     private boolean hasTarget;
 
-    // Vệt đường đã đi (breadcrumb) để vẽ lên bản đồ
-    private final java.util.ArrayDeque<double[]> trail = new java.util.ArrayDeque<>();
-    private static final int TRAIL_MAX = 2000;
-    private static final double TRAIL_MIN_METERS = 1.0;
-
     private long lastTick;
 
     private final Runnable tick = new Runnable() {
@@ -78,7 +73,6 @@ public final class FakeGpsEngine {
                 if (joyActive) moved = stepJoystick(dt) || moved;
                 else if (running && route.size() > 1) moved = stepRoute(dt) || moved;
                 else if (running && hasTarget) moved = stepTarget(dt) || moved;
-                if (moved) recordTrail();
             }
             if (running) publish(moved);
             handler.postDelayed(this, 100);
@@ -223,7 +217,6 @@ public final class FakeGpsEngine {
             lat = clampLat(newLat);
             lng = wrapLng(newLng);
             hasTarget = false;
-            recordTrail();
         }
         publish(true);
     }
@@ -244,29 +237,10 @@ public final class FakeGpsEngine {
     public double targetLat() { return targetLat; }
     public double targetLng() { return targetLng; }
 
-    // ------------------------------------------------------------------ trail (vệt đường đã đi)
-
-    private void recordTrail() {
-        if (!trail.isEmpty()) {
-            double[] last = trail.peekLast();
-            double dmLat = (lat - last[0]) * 111320.0;
-            double dmLng = (lng - last[1]) * 111320.0 * Math.cos(Math.toRadians(lat));
-            if (Math.hypot(dmLat, dmLng) < TRAIL_MIN_METERS) return;
-        }
-        trail.addLast(new double[]{lat, lng});
-        while (trail.size() > TRAIL_MAX) trail.removeFirst();
-    }
-
-    /** Các điểm đã đi qua để vẽ vệt đường lên bản đồ. */
-    public List<double[]> trail() { synchronized (lock) { return new ArrayList<>(trail); } }
-
-    public void clearTrail() { synchronized (lock) { trail.clear(); } }
-
     public void nudge(double dLat, double dLng) {
         synchronized (lock) {
             lat = clampLat(lat + dLat);
             lng = wrapLng(lng + dLng);
-            recordTrail();
         }
         publish(true);
     }
