@@ -1,0 +1,6 @@
+50,Diglett,67,108,81,Alola
+51,Dugtrio,111,201,142,Alola
+51,Dugtrio,111,167,136
+291,Ninjask,156,199,112
+808,Meltan,130,118,99
+809,Melmetal,264,226,190
